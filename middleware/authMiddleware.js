@@ -24,22 +24,22 @@ const protect = async (req, res, next) => {
         req.user = await TurfAdmin.findById(decoded.id).select('-password');
         req.userType = 'turf_admin';
       } else {
-        return res.status(401).json({ message: 'Not authorized, invalid token type' });
+        return res.status(401).json({ status: false, message: 'Not authorized, invalid token type', data: null });
       }
 
       if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
+        return res.status(401).json({ status: false, message: 'Not authorized, user not found', data: null });
       }
 
       next();
     } catch (error) {
       console.error(error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      res.status(401).json({ status: false, message: 'Not authorized, token failed', data: null });
     }
   }
 
   if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    res.status(401).json({ status: false, message: 'Not authorized, no token', data: null });
   }
 };
 
@@ -47,7 +47,7 @@ const protectSuperAdmin = (req, res, next) => {
   if (req.user && req.userType === 'super_admin') {
     next();
   } else {
-    res.status(403).json({ message: 'Not authorized, strictly Super Admin only' });
+    res.status(403).json({ status: false, message: 'Not authorized, strictly Super Admin only', data: null });
   }
 };
 

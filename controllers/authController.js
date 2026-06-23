@@ -17,16 +17,20 @@ const authAdmin = async (req, res) => {
       const adminId = credential ? credential._id : 'super_admin_id';
       
       res.json({
-        _id: adminId,
-        username: username,
-        token: generateToken(adminId, 'super_admin')
+        status: true,
+        message: 'Login successful',
+        data: {
+          _id: adminId,
+          username: username,
+          token: generateToken(adminId, 'super_admin')
+        }
       });
     } else {
-      res.status(401).json({ message: 'Invalid username or password' });
+      res.status(401).json({ status: false, message: 'Invalid username or password' });
     }
   } catch (error) {
     console.error(`Login error: ${error.message}`);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ status: false, message: 'Server Error', data: null });
   }
 };
 
@@ -48,17 +52,21 @@ const loginTurfAdmin = async (req, res) => {
 
     if (admin && admin.isActive && (await bcrypt.compare(password, admin.password))) {
       res.json({
-        _id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        turfId: admin.turfId,
-        token: generateToken(admin._id, 'turf_admin')
+        status: true,
+        message: 'Login successful',
+        data: {
+          _id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          turfId: admin.turfId,
+          token: generateToken(admin._id, 'turf_admin')
+        }
       });
     } else {
-      res.status(401).json({ message: 'Invalid email or password, or account deactivated' });
+      res.status(401).json({ status: false, message: 'Invalid email or password, or account deactivated' });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ status: false, message: 'Server Error', data: null });
   }
 };
 

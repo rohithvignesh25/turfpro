@@ -21,17 +21,21 @@ const loginTurfAdmin = async (req, res) => {
 
     if (admin && admin.isActive && (await bcrypt.compare(password, admin.password))) {
       res.json({
-        _id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        turfId: admin.turfId,
-        token: generateToken(admin._id, 'turf_admin')
+        status: true,
+        message: 'Login successful',
+        data: {
+          _id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          turfId: admin.turfId,
+          token: generateToken(admin._id, 'turf_admin')
+        }
       });
     } else {
-      res.status(401).json({ message: 'Invalid email or password, or account deactivated' });
+      res.status(401).json({ status: false, message: 'Invalid email or password, or account deactivated', data: null });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ status: false, message: 'Server Error', data: null });
   }
 };
 
@@ -45,13 +49,13 @@ const createTurfAdmin = async (req, res) => {
     // Check if turf exists
     const turfExists = await Turf.findById(turfId);
     if (!turfExists) {
-      return res.status(400).json({ message: 'Assigned Turf not found' });
+      return res.status(400).json({ status: false, message: 'Assigned Turf not found', data: null });
     }
 
     // Check if email already exists
     const adminExists = await TurfAdmin.findOne({ email });
     if (adminExists) {
-      return res.status(400).json({ message: 'Turf Admin with this email already exists' });
+      return res.status(400).json({ status: false, message: 'Turf Admin with this email already exists', data: null });
     }
 
     // Hash password
@@ -71,9 +75,9 @@ const createTurfAdmin = async (req, res) => {
     const adminResponse = createdAdmin.toObject();
     delete adminResponse.password;
 
-    res.status(201).json(adminResponse);
+    res.status(201).json({ status: true, message: 'Turf admin created successfully', data: adminResponse });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -83,9 +87,9 @@ const createTurfAdmin = async (req, res) => {
 const getAllTurfAdmins = async (req, res) => {
   try {
     const admins = await TurfAdmin.find({}).populate('turfId', 'name address').select('-password');
-    res.json(admins);
+    res.json({ status: true, message: 'Turf admins retrieved successfully', data: admins });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -96,12 +100,12 @@ const getTurfAdminById = async (req, res) => {
   try {
     const admin = await TurfAdmin.findById(req.params.id).populate('turfId', 'name address').select('-password');
     if (admin) {
-      res.json(admin);
+      res.json({ status: true, message: 'Turf admin retrieved successfully', data: admin });
     } else {
-      res.status(404).json({ message: 'Turf Admin not found' });
+      res.status(404).json({ status: false, message: 'Turf Admin not found', data: null });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -115,13 +119,13 @@ const updateTurfAdmin = async (req, res) => {
     const admin = await TurfAdmin.findById(req.params.id);
 
     if (!admin) {
-      return res.status(404).json({ message: 'Turf Admin not found' });
+      return res.status(404).json({ status: false, message: 'Turf Admin not found', data: null });
     }
 
     if (turfId) {
       const turfExists = await Turf.findById(turfId);
       if (!turfExists) {
-        return res.status(400).json({ message: 'Assigned Turf not found' });
+        return res.status(400).json({ status: false, message: 'Assigned Turf not found', data: null });
       }
       admin.turfId = turfId;
     }
@@ -134,9 +138,9 @@ const updateTurfAdmin = async (req, res) => {
     const adminResponse = updatedAdmin.toObject();
     delete adminResponse.password;
 
-    res.json(adminResponse);
+    res.json({ status: true, message: 'Turf admin updated successfully', data: adminResponse });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -148,7 +152,7 @@ const toggleTurfAdminStatus = async (req, res) => {
     const admin = await TurfAdmin.findById(req.params.id);
 
     if (!admin) {
-      return res.status(404).json({ message: 'Turf Admin not found' });
+      return res.status(404).json({ status: false, message: 'Turf Admin not found', data: null });
     }
 
     admin.isActive = !admin.isActive;
@@ -157,9 +161,9 @@ const toggleTurfAdminStatus = async (req, res) => {
     const adminResponse = updatedAdmin.toObject();
     delete adminResponse.password;
 
-    res.json(adminResponse);
+    res.json({ status: true, message: 'Turf admin status toggled successfully', data: adminResponse });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -170,19 +174,19 @@ const resetTurfAdminPassword = async (req, res) => {
   try {
     // Authorization check: Super Admin can reset anyone, Turf Admin can only reset themselves
     if (req.userType === 'turf_admin' && req.user._id.toString() !== req.params.id) {
-      return res.status(403).json({ message: 'Not authorized to reset this password' });
+      return res.status(403).json({ status: false, message: 'Not authorized to reset this password', data: null });
     }
 
     const { newPassword } = req.body;
 
     if (!newPassword) {
-      return res.status(400).json({ message: 'Please provide newPassword' });
+      return res.status(400).json({ status: false, message: 'Please provide newPassword', data: null });
     }
 
     const admin = await TurfAdmin.findById(req.params.id);
 
     if (!admin) {
-      return res.status(404).json({ message: 'Turf Admin not found' });
+      return res.status(404).json({ status: false, message: 'Turf Admin not found', data: null });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -190,9 +194,9 @@ const resetTurfAdminPassword = async (req, res) => {
     
     await admin.save();
 
-    res.json({ message: 'Password reset successful' });
+    res.json({ status: true, message: 'Password reset successful', data: null });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ status: false, message: error.message, data: null });
   }
 };
 

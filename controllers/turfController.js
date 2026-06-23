@@ -10,7 +10,7 @@ const createTurf = async (req, res) => {
     if (typeof data.sports === 'string') data.sports = JSON.parse(data.sports);
     if (typeof data.location === 'string') data.location = JSON.parse(data.location);
     if (typeof data.timeWindow === 'string') data.timeWindow = JSON.parse(data.timeWindow);
-    
+
     // If an image was uploaded, add its path
     if (req.file) {
       data.image = `/${req.file.path.replace(/\\/g, '/')}`;
@@ -18,9 +18,9 @@ const createTurf = async (req, res) => {
 
     const turf = new Turf(data);
     const createdTurf = await turf.save();
-    res.status(201).json(createdTurf);
+    res.status(201).json({ status: true, message: 'Turf created successfully', data: createdTurf });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -30,9 +30,9 @@ const createTurf = async (req, res) => {
 const getAllTurfs = async (req, res) => {
   try {
     const turfs = await Turf.find({});
-    res.json(turfs);
+    res.json({ status: true, message: 'Turfs retrieved successfully', data: turfs });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -43,12 +43,12 @@ const getTurfById = async (req, res) => {
   try {
     const turf = await Turf.findById(req.params.id);
     if (turf) {
-      res.json(turf);
+      res.json({ status: true, message: 'Turf retrieved successfully', data: turf });
     } else {
-      res.status(404).json({ message: 'Turf not found' });
+      res.status(404).json({ status: false, message: 'Turf not found', data: null });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -75,12 +75,12 @@ const updateTurf = async (req, res) => {
     );
 
     if (turf) {
-      res.json(turf);
+      res.json({ status: true, message: 'Turf updated successfully', data: turf });
     } else {
-      res.status(404).json({ message: 'Turf not found' });
+      res.status(404).json({ status: false, message: 'Turf not found', data: null });
     }
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -92,12 +92,12 @@ const deleteTurf = async (req, res) => {
     const turf = await Turf.findByIdAndDelete(req.params.id);
 
     if (turf) {
-      res.json({ message: 'Turf removed successfully' });
+      res.json({ status: true, message: 'Turf removed successfully', data: null });
     } else {
-      res.status(404).json({ message: 'Turf not found' });
+      res.status(404).json({ status: false, message: 'Turf not found', data: null });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -109,15 +109,15 @@ const toggleTurfStatus = async (req, res) => {
     const turf = await Turf.findById(req.params.id);
 
     if (!turf) {
-      return res.status(404).json({ message: 'Turf not found' });
+      return res.status(404).json({ status: false, message: 'Turf not found', data: null });
     }
 
     turf.isActive = !turf.isActive;
     const updatedTurf = await turf.save();
 
-    res.json(updatedTurf);
+    res.json({ status: true, message: 'Turf status toggled successfully', data: updatedTurf });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ status: false, message: error.message, data: null });
   }
 };
 

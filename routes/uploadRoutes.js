@@ -8,9 +8,9 @@ const { protect } = require('../middleware/authMiddleware');
 // @access  Private (Super Admin)
 router.post('/', protect, upload.single('image'), (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
+    return res.status(400).json({ status: false, message: 'No file uploaded', data: null });
   }
-  res.send(`/${req.file.path.replace(/\\/g, '/')}`);
+  res.json({ status: true, message: 'File uploaded successfully', data: `/${req.file.path.replace(/\\/g, '/')}` });
 });
 
 module.exports = router;
