@@ -10,15 +10,16 @@ const authAdmin = async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // Find the specific credential in the collection
-    const credential = await Credential.findOne({ username });
-
-    // Validate the credentials
-    if (credential && credential.password === password) {
+    // Hardcoded super admin login logic
+    if (username === 'turfpro@gmail.com' && password === 'turfpro@turfpro') {
+      // Try to find the credential in the DB to get a valid _id, otherwise use a fallback
+      const credential = await Credential.findOne({ username });
+      const adminId = credential ? credential._id : 'super_admin_id';
+      
       res.json({
-        _id: credential._id,
-        username: credential.username,
-        token: generateToken(credential._id, 'super_admin')
+        _id: adminId,
+        username: username,
+        token: generateToken(adminId, 'super_admin')
       });
     } else {
       res.status(401).json({ message: 'Invalid username or password' });
