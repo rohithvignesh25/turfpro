@@ -14,7 +14,11 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       if (decoded.type === 'super_admin') {
-        req.user = await Credential.findById(decoded.id).select('-password');
+        if (decoded.id === 'super_admin_id') {
+          req.user = { _id: 'super_admin_id', username: 'turfpro@gmail.com' };
+        } else {
+          req.user = await Credential.findById(decoded.id).select('-password');
+        }
         req.userType = 'super_admin';
       } else if (decoded.type === 'turf_admin') {
         req.user = await TurfAdmin.findById(decoded.id).select('-password');
