@@ -46,7 +46,7 @@ const authAdmin = async (req, res) => {
           _id: turfAdmin._id,
           name: turfAdmin.name,
           email: turfAdmin.email,
-          username: turfAdmin.email,
+          username: turfAdmin.name,
           turfId: turfAdmin.turfId?._id || turfAdmin.turfId,
           turfName: turfAdmin.turfId?.name,
           role: 'turf_admin',
