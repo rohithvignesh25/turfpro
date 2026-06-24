@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 // @access  Public
 const authAdmin = async (req, res) => {
   // Support both 'username' and 'email' fields from the frontend payload
-  const loginId = req.body.username || req.body.email;
+  const loginId = req.body.email;
   const password = req.body.password;
 
   if (!loginId || !password) {
