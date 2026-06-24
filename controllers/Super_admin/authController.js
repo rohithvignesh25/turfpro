@@ -7,27 +7,58 @@ const bcrypt = require('bcryptjs');
 // @route   POST /api/admin/login
 // @access  Public
 const authAdmin = async (req, res) => {
-  const { username, password } = req.body;
+  // Support both 'username' and 'email' fields from the frontend payload
+  const loginId = req.body.username || req.body.email;
+  const password = req.body.password;
+
+  if (!loginId || !password) {
+    return res.status(400).json({ status: false, message: 'Please provide credentials', data: null });
+  }
 
   try {
-    // Hardcoded super admin login logic
-    if (username === 'turfpro@gmail.com' && password === 'turfpro@turfpro') {
-      // Try to find the credential in the DB to get a valid _id, otherwise use a fallback
-      const credential = await Credential.findOne({ username });
+    // 1. Check for Super Admin
+    if (loginId === 'turfpro@gmail.com' && password === 'turfpro@turfpro') {
+      const credential = await Credential.findOne({ username: loginId });
       const adminId = credential ? credential._id : 'super_admin_id';
 
-      res.json({
+      return res.json({
         status: true,
-        message: 'Login successful',
+        message: 'Super Admin Login successful',
         data: {
           _id: adminId,
-          username: username,
-          token: generateToken(adminId, 'super_admin')
+          username: loginId,
+          email: loginId,
+          role: 'super_admin',
+          token: generateToken(adminId, 'super_admin'),
+          permissions: ['dashboard', 'turf management', 'turf admin']
         }
       });
-    } else {
-      res.status(401).json({ status: false, message: 'Invalid username or password' });
     }
+
+    // 2. Check for Turf Admin
+    const turfAdmin = await TurfAdmin.findOne({ email: loginId }).populate('turfId', 'name');
+
+    if (turfAdmin && turfAdmin.isActive && (await bcrypt.compare(password, turfAdmin.password))) {
+      return res.json({
+        status: true,
+        message: 'Turf Admin Login successful',
+        data: {
+          _id: turfAdmin._id,
+          name: turfAdmin.name,
+          email: turfAdmin.email,
+          username: turfAdmin.email,
+          turfId: turfAdmin.turfId?._id || turfAdmin.turfId,
+          turfName: turfAdmin.turfId?.name,
+          role: 'turf_admin',
+          token: generateToken(turfAdmin._id, 'turf_admin'),
+          permissions: ['dashboard', 'manage turf', 'manage timeslot']
+        }
+      });
+    }
+
+    // 3. If neither matched
+    res.status(401).json({ status: false, message: 'Invalid credentials or account deactivated' });
+
   } catch (error) {
     console.error(`Login error: ${error.message}`);
     res.status(500).json({ status: false, message: 'Server Error', data: null });

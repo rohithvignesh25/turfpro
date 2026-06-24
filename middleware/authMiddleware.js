@@ -51,4 +51,12 @@ const protectSuperAdmin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, protectSuperAdmin };
+const protectTurfAdmin = (req, res, next) => {
+  if (req.user && req.userType === 'turf_admin') {
+    next();
+  } else {
+    res.status(403).json({ status: false, message: 'Not authorized, strictly Turf Admin only', data: null });
+  }
+};
+
+module.exports = { protect, protectSuperAdmin, protectTurfAdmin };

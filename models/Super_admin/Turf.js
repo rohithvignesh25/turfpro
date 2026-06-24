@@ -44,6 +44,13 @@ const turfSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  facilities: [{
+    type: String
+  }],
+  contactDetails: {
+    phone: { type: String },
+    email: { type: String }
   }
 }, {
   collection: 'turfs',
