@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authAdmin, loginTurfAdmin } = require('../controllers/authController');
+const { authAdmin, loginTurfAdmin } = require('../../controllers/Super_admin/authController');
 
 // POST /api/admin/login (Super Admin Login)
 router.post('/login', authAdmin);

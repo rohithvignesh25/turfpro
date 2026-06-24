@@ -1,5 +1,5 @@
-const Credential = require('../models/Credential');
-const TurfAdmin = require('../models/TurfAdmin');
+const Credential = require('../../models/Super_admin/Credential');
+const TurfAdmin = require('../../models/Super_admin/TurfAdmin');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -15,7 +15,7 @@ const authAdmin = async (req, res) => {
       // Try to find the credential in the DB to get a valid _id, otherwise use a fallback
       const credential = await Credential.findOne({ username });
       const adminId = credential ? credential._id : 'super_admin_id';
-      
+
       res.json({
         status: true,
         message: 'Login successful',

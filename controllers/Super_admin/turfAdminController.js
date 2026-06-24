@@ -1,5 +1,5 @@
-const TurfAdmin = require('../models/TurfAdmin');
-const Turf = require('../models/Turf');
+const TurfAdmin = require('../../models/Super_admin/TurfAdmin');
+const Turf = require('../../models/Super_admin/Turf');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -191,12 +191,29 @@ const resetTurfAdminPassword = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     admin.password = await bcrypt.hash(newPassword, salt);
-    
+
     await admin.save();
 
     res.json({ status: true, message: 'Password reset successful', data: null });
   } catch (error) {
     res.status(400).json({ status: false, message: error.message, data: null });
+  }
+};
+
+// @desc    Delete a turf admin
+// @route   DELETE /api/turf-admins/:id
+// @access  Private (Super Admin)
+const deleteTurfAdmin = async (req, res) => {
+  try {
+    const admin = await TurfAdmin.findByIdAndDelete(req.params.id);
+
+    if (admin) {
+      res.json({ status: true, message: 'Turf Admin removed successfully', data: null });
+    } else {
+      res.status(404).json({ status: false, message: 'Turf Admin not found', data: null });
+    }
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message, data: null });
   }
 };
 
@@ -207,5 +224,6 @@ module.exports = {
   getTurfAdminById,
   updateTurfAdmin,
   toggleTurfAdminStatus,
-  resetTurfAdminPassword
+  resetTurfAdminPassword,
+  deleteTurfAdmin
 };

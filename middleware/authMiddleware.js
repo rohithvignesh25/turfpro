@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const Credential = require('../models/Credential');
-const TurfAdmin = require('../models/TurfAdmin');
+const Credential = require('../models/Super_admin/Credential');
+const TurfAdmin = require('../models/Super_admin/TurfAdmin');
 
 const protect = async (req, res, next) => {
   let token;

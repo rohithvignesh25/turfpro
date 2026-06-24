@@ -7,9 +7,9 @@ const {
   updateTurf,
   deleteTurf,
   toggleTurfStatus
-} = require('../controllers/turfController');
-const { protect, protectSuperAdmin } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware');
+} = require('../../controllers/Super_admin/turfController');
+const { protect, protectSuperAdmin } = require('../../middleware/authMiddleware');
+const upload = require('../../middleware/uploadMiddleware');
 
 // All turf routes are protected by Super Admin auth middleware
 router.route('/')

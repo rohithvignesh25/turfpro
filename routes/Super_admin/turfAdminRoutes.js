@@ -6,9 +6,10 @@ const {
   getTurfAdminById,
   updateTurfAdmin,
   toggleTurfAdminStatus,
-  resetTurfAdminPassword
-} = require('../controllers/turfAdminController');
-const { protect, protectSuperAdmin } = require('../middleware/authMiddleware');
+  resetTurfAdminPassword,
+  deleteTurfAdmin
+} = require('../../controllers/Super_admin/turfAdminController');
+const { protect, protectSuperAdmin } = require('../../middleware/authMiddleware');
 
 // All routes below are restricted strictly to Super Admins
 router.route('/')
@@ -17,7 +18,8 @@ router.route('/')
 
 router.route('/:id')
   .get(protect, protectSuperAdmin, getTurfAdminById)
-  .put(protect, protectSuperAdmin, updateTurfAdmin);
+  .put(protect, protectSuperAdmin, updateTurfAdmin)
+  .delete(protect, protectSuperAdmin, deleteTurfAdmin);
 
 router.post('/:id/status', protect, protectSuperAdmin, toggleTurfAdminStatus);
 router.post('/:id/reset-password', protect, resetTurfAdminPassword);

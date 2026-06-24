@@ -1,4 +1,4 @@
-const Turf = require('../models/Turf');
+const Turf = require('../../models/Super_admin/Turf');
 
 // @desc    Create a new turf
 // @route   POST /api/turfs

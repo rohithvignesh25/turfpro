@@ -3,10 +3,10 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
-const authRoutes = require('./routes/authRoutes');
-const turfRoutes = require('./routes/turfRoutes');
+const authRoutes = require('./routes/Super_admin/authRoutes');
+const turfRoutes = require('./routes/Super_admin/turfRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
-const turfAdminRoutes = require('./routes/turfAdminRoutes');
+const turfAdminRoutes = require('./routes/Super_admin/turfAdminRoutes');
 
 // Load environment variables
 dotenv.config();
