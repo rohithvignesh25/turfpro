@@ -17,7 +17,7 @@ const authAdmin = async (req, res) => {
 
   try {
     // 1. Check for Super Admin
-    if (loginId === 'admin@gmail.com' && password === '123') {
+    if (loginId === 'admin' && password === '123') {
       const credential = await Credential.findOne({ username: loginId });
       const adminId = credential ? credential._id : 'super_admin_id';
 
