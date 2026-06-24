@@ -1,36 +1,58 @@
 const Slot = require('../../models/Turf_admin/Slot');
 
+const getDatesInRange = (startDateStr, endDateStr) => {
+  const dates = [];
+  const current = new Date(startDateStr + 'T00:00:00Z');
+  const end = new Date(endDateStr + 'T00:00:00Z');
+  
+  while (current <= end) {
+    dates.push(current.toISOString().split('T')[0]);
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+  return dates;
+};
+
 // @desc    Create new slot(s)
 // @route   POST /api/turf-admin/slots
 // @access  Private (Turf Admin)
 const createSlot = async (req, res) => {
   try {
     const turfId = req.user.turfId;
-    const { sport, date, startTime, endTime } = req.body;
+    const { sport, date, startDate, endDate, startTime, endTime } = req.body;
 
-    // Check if slot already exists for same turf, date, sport, and time
-    const existingSlot = await Slot.findOne({
-      turfId,
-      sport,
-      date,
-      startTime,
-      endTime
-    });
-
-    if (existingSlot) {
-      return res.status(400).json({ status: false, message: 'Slot already exists for this time and sport', data: null });
+    if (!sport || !startTime || !endTime) {
+      return res.status(400).json({ status: false, message: 'sport, startTime, and endTime are required', data: null });
     }
 
-    const slot = new Slot({
-      turfId,
-      sport,
-      date,
-      startTime,
-      endTime
-    });
+    const datesToProcess = [];
 
-    const createdSlot = await slot.save();
-    res.status(201).json({ status: true, message: 'Slot created successfully', data: createdSlot });
+    if (startDate && endDate) {
+      datesToProcess.push(...getDatesInRange(startDate, endDate));
+    } else if (date) {
+      datesToProcess.push(date);
+    } else {
+      return res.status(400).json({ status: false, message: 'Please provide either a date OR startDate and endDate', data: null });
+    }
+
+    const slotsToInsert = [];
+
+    for (const d of datesToProcess) {
+      const existingSlot = await Slot.findOne({ turfId, sport, date: d, startTime, endTime });
+      if (!existingSlot) {
+        slotsToInsert.push({ turfId, sport, date: d, startTime, endTime });
+      }
+    }
+
+    if (slotsToInsert.length === 0) {
+      return res.status(400).json({ status: false, message: 'Slots already exist for all requested dates', data: null });
+    }
+
+    const createdSlots = await Slot.insertMany(slotsToInsert);
+    res.status(201).json({ 
+      status: true, 
+      message: `${createdSlots.length} slot(s) created successfully`, 
+      data: createdSlots 
+    });
   } catch (error) {
     res.status(400).json({ status: false, message: error.message, data: null });
   }
