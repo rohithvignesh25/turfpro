@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const dns = require('dns');
+const https = require('https');
 
 // Force IPv4 resolution (Render containers do not support IPv6 routing)
 if (dns.setDefaultResultOrder) {
@@ -11,6 +12,102 @@ const forceIPv4Lookup = (hostname, options, callback) => {
   const cb = typeof options === 'function' ? options : callback;
   const opts = typeof options === 'object' && options !== null ? { ...options, family: 4 } : { family: 4 };
   return dns.lookup(hostname, opts, cb);
+};
+
+// 1. HTTP-based Email Sending via Brevo (Sendinblue) over Port 443
+const sendViaBrevo = async ({ to, subject, html, text }) => {
+  return new Promise((resolve) => {
+    const data = JSON.stringify({
+      sender: {
+        name: "TurfPro Admin",
+        email: process.env.FROM_EMAIL_ONLY || process.env.SMTP_USER || "rohithvignesh2@gmail.com"
+      },
+      to: [{ email: to }],
+      subject: subject,
+      htmlContent: html || text || "",
+      textContent: text || ""
+    });
+
+    const options = {
+      hostname: 'api.brevo.com',
+      port: 443,
+      path: '/v3/smtp/email',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log('Brevo HTTP email sent successfully:', body);
+          resolve({ status: true, message: 'Email sent successfully via Brevo HTTP API (Port 443)', info: JSON.parse(body || '{}') });
+        } else {
+          console.error(`Brevo HTTP Error (${res.statusCode}):`, body);
+          resolve({ status: false, message: `Brevo HTTP Error (${res.statusCode}): ${body}` });
+        }
+      });
+    });
+
+    req.on('error', (e) => {
+      console.error('Brevo HTTPS request error:', e.message);
+      resolve({ status: false, message: e.message });
+    });
+    req.write(data);
+    req.end();
+  });
+};
+
+// 2. HTTP-based Email Sending via Resend over Port 443
+const sendViaResend = async ({ to, subject, html, text }) => {
+  return new Promise((resolve) => {
+    const data = JSON.stringify({
+      from: process.env.FROM_EMAIL || "TurfPro <onboarding@resend.dev>",
+      to: [to],
+      subject: subject,
+      html: html || text || "",
+      text: text || ""
+    });
+
+    const options = {
+      hostname: 'api.resend.com',
+      port: 443,
+      path: '/emails',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log('Resend HTTP email sent successfully:', body);
+          resolve({ status: true, message: 'Email sent successfully via Resend HTTP API (Port 443)', info: JSON.parse(body || '{}') });
+        } else {
+          console.error(`Resend HTTP Error (${res.statusCode}):`, body);
+          resolve({ status: false, message: `Resend HTTP Error (${res.statusCode}): ${body}` });
+        }
+      });
+    });
+
+    req.on('error', (e) => {
+      console.error('Resend HTTPS request error:', e.message);
+      resolve({ status: false, message: e.message });
+    });
+    req.write(data);
+    req.end();
+  });
 };
 
 // Create reusable transporter object using SMTP transport
@@ -71,6 +168,23 @@ const createTransporter = async () => {
 
 const sendEmail = async ({ to, subject, html, text }) => {
   try {
+    // Priority 1: Brevo HTTP API over Port 443 (Never blocked by cloud free tiers)
+    if (process.env.BREVO_API_KEY) {
+      console.log(`[EMAIL] Sending via Brevo HTTP API (Port 443) to: ${to}`);
+      const res = await sendViaBrevo({ to, subject, html, text });
+      if (res.status) return res;
+      console.warn('Brevo HTTP failed, falling back to SMTP...', res.message);
+    }
+
+    // Priority 2: Resend HTTP API over Port 443 (Never blocked by cloud free tiers)
+    if (process.env.RESEND_API_KEY) {
+      console.log(`[EMAIL] Sending via Resend HTTP API (Port 443) to: ${to}`);
+      const res = await sendViaResend({ to, subject, html, text });
+      if (res.status) return res;
+      console.warn('Resend HTTP failed, falling back to SMTP...', res.message);
+    }
+
+    // Priority 3: Nodemailer SMTP (Works locally or on paid hosting)
     const transporter = await createTransporter();
     
     if (!transporter) {
