@@ -6,6 +6,13 @@ if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder('ipv4first');
 }
 
+// Custom DNS lookup to guarantee IPv4 resolution for Nodemailer sockets
+const forceIPv4Lookup = (hostname, options, callback) => {
+  const cb = typeof options === 'function' ? options : callback;
+  const opts = typeof options === 'object' && options !== null ? { ...options, family: 4 } : { family: 4 };
+  return dns.lookup(hostname, opts, cb);
+};
+
 // Create reusable transporter object using SMTP transport
 const createTransporter = async () => {
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
@@ -16,7 +23,7 @@ const createTransporter = async () => {
         host: 'smtp.gmail.com',
         port: 465,
         secure: true,
-        family: 4, // Force IPv4
+        lookup: forceIPv4Lookup, // Guarantee IPv4
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
@@ -31,7 +38,7 @@ const createTransporter = async () => {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT) === 465,
-      family: 4, // Force IPv4
+      lookup: forceIPv4Lookup, // Guarantee IPv4
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
