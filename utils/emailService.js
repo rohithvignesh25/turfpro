@@ -1,4 +1,10 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Force IPv4 resolution (Render containers do not support IPv6 routing)
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 // Create reusable transporter object using SMTP transport
 const createTransporter = async () => {
@@ -7,7 +13,10 @@ const createTransporter = async () => {
     
     if (isGmail) {
       return nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        family: 4, // Force IPv4
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
@@ -22,6 +31,7 @@ const createTransporter = async () => {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT) === 465,
+      family: 4, // Force IPv4
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,

@@ -1,5 +1,11 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const dns = require('dns');
+
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first'); // Fixes cloud IPv6 ENETUNREACH errors on Render
+}
+
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
