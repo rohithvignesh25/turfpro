@@ -28,6 +28,14 @@ const slotSchema = new mongoose.Schema({
   },
   reason: {
     type: String
+  },
+  isBooked: {
+    type: Boolean,
+    default: false
+  },
+  bookingId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Booking'
   }
 }, {
   timestamps: true

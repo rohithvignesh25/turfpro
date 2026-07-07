@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const Credential = require('../models/Super_admin/Credential');
 const TurfAdmin = require('../models/Super_admin/TurfAdmin');
+const User = require('../models/User/User');
 
 const protect = async (req, res, next) => {
   let token;
@@ -23,6 +24,9 @@ const protect = async (req, res, next) => {
       } else if (decoded.type === 'turf_admin') {
         req.user = await TurfAdmin.findById(decoded.id).select('-password');
         req.userType = 'turf_admin';
+      } else if (decoded.type === 'user') {
+        req.user = await User.findById(decoded.id).select('-password');
+        req.userType = 'user';
       } else {
         return res.status(401).json({ status: false, message: 'Not authorized, invalid token type', data: null });
       }
@@ -59,4 +63,12 @@ const protectTurfAdmin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, protectSuperAdmin, protectTurfAdmin };
+const protectUser = (req, res, next) => {
+  if (req.user && req.userType === 'user') {
+    next();
+  } else {
+    res.status(403).json({ status: false, message: 'Not authorized, strictly User only', data: null });
+  }
+};
+
+module.exports = { protect, protectSuperAdmin, protectTurfAdmin, protectUser };

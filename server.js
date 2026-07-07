@@ -15,6 +15,14 @@ const turfAdminSlotRoutes = require('./routes/Turf_admin/slotRoutes');
 // Unified Auth Routes
 const unifiedAuthRoutes = require('./routes/authRoutes');
 
+// User End Portal Routes
+const userAuthRoutes = require('./routes/User/userAuthRoutes');
+const userProfileRoutes = require('./routes/User/userProfileRoutes');
+const userDashboardRoutes = require('./routes/User/userDashboardRoutes');
+const userTurfRoutes = require('./routes/User/userTurfRoutes');
+const userBookingRoutes = require('./routes/User/userBookingRoutes');
+const userNotificationRoutes = require('./routes/User/userNotificationRoutes');
+
 // Load environment variables
 dotenv.config();
 
@@ -39,6 +47,14 @@ app.use('/api/auth', unifiedAuthRoutes);
 // Turf Admin Portal Routes
 app.use('/api/turf-admin/turf', turfAdminTurfRoutes);
 app.use('/api/turf-admin/slots', turfAdminSlotRoutes);
+
+// User End Portal Routes
+app.use('/api/user/auth', userAuthRoutes);
+app.use('/api/user/profile', userProfileRoutes);
+app.use('/api/user/dashboard', userDashboardRoutes);
+app.use('/api/user/turfs', userTurfRoutes);
+app.use('/api/user/bookings', userBookingRoutes);
+app.use('/api/user/notifications', userNotificationRoutes);
 
 // Make the uploads folder static so images can be accessed directly via URL
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));

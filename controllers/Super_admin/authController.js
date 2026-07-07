@@ -7,18 +7,18 @@ const bcrypt = require('bcryptjs');
 // @route   POST /api/admin/login
 // @access  Public
 const authAdmin = async (req, res) => {
-  // Support both 'username' and 'email' fields from the frontend payload
-  const loginId = req.body.email;
+  // Use 'email' field from the frontend payload
+  const email = req.body.email || req.body.username;
   const password = req.body.password;
 
-  if (!loginId || !password) {
-    return res.status(400).json({ status: false, message: 'Please provide credentials', data: null });
+  if (!email || !password) {
+    return res.status(400).json({ status: false, message: 'Please provide email and password', data: null });
   }
 
   try {
     // 1. Check for Super Admin
-    if (loginId === 'admin' && password === '123') {
-      const credential = await Credential.findOne({ username: loginId });
+    if ((email === 'admin@gmail.com' && password === '123') || (email === 'admin' && password === '123')) {
+      const credential = await Credential.findOne({ username: email });
       const adminId = credential ? credential._id : 'super_admin_id';
 
       return res.json({
@@ -26,8 +26,7 @@ const authAdmin = async (req, res) => {
         message: 'Super Admin Login successful',
         data: {
           _id: adminId,
-          username: loginId,
-          email: loginId,
+          email: email,
           role: 'super_admin',
           token: generateToken(adminId, 'super_admin'),
           permissions: ['dashboard', 'turf management', 'turf admin']
@@ -36,7 +35,7 @@ const authAdmin = async (req, res) => {
     }
 
     // 2. Check for Turf Admin
-    const turfAdmin = await TurfAdmin.findOne({ email: loginId }).populate('turfId', 'name');
+    const turfAdmin = await TurfAdmin.findOne({ email }).populate('turfId', 'name');
 
     if (turfAdmin && turfAdmin.isActive && (await bcrypt.compare(password, turfAdmin.password))) {
       return res.json({
@@ -46,7 +45,6 @@ const authAdmin = async (req, res) => {
           _id: turfAdmin._id,
           name: turfAdmin.name,
           email: turfAdmin.email,
-          username: turfAdmin.name,
           turfId: turfAdmin.turfId?._id || turfAdmin.turfId,
           turfName: turfAdmin.turfId?.name,
           role: 'turf_admin',
@@ -76,7 +74,12 @@ const generateToken = (id, type) => {
 // @route   POST /api/admin/turf-admin/login
 // @access  Public
 const loginTurfAdmin = async (req, res) => {
-  const { email, password } = req.body;
+  const email = req.body.email || req.body.username;
+  const { password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ status: false, message: 'Please provide email and password', data: null });
+  }
 
   try {
     const admin = await TurfAdmin.findOne({ email });
