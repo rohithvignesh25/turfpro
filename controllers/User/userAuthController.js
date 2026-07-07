@@ -49,7 +49,7 @@ const register = async (req, res) => {
     }
 
     // Send verification email via Nodemailer
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'TurfPro - Verify Your Email (OTP)',
       html: `
@@ -68,10 +68,13 @@ const register = async (req, res) => {
 
     res.status(201).json({
       status: true,
-      message: 'Registration initiated! Please verify your email with the OTP sent to your mail id.',
+      message: emailResult.status
+        ? 'Registration initiated! Please verify your email with the OTP sent to your mail id.'
+        : `Registration initiated! (Note: Cloud email sending failed: ${emailResult.message}. Use the devOtp below for testing.)`,
       data: {
         email: user.email,
-        isVerified: false
+        isVerified: false,
+        ...(!emailResult.status ? { devOtp: otp, emailError: emailResult.message } : {})
       }
     });
   } catch (error) {
@@ -179,7 +182,7 @@ const forgotPassword = async (req, res) => {
       </div>
     `;
 
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: emailSubject,
       html: emailHtml,
@@ -188,8 +191,8 @@ const forgotPassword = async (req, res) => {
 
     res.json({
       status: true,
-      message: 'Password reset OTP sent to email',
-      data: null
+      message: emailResult.status ? 'Password reset OTP sent to email' : `Password reset OTP generated (Email failed: ${emailResult.message})`,
+      data: !emailResult.status ? { devOtp: resetToken, emailError: emailResult.message } : null
     });
   } catch (error) {
     console.error(`Forgot password error: ${error.message}`);
@@ -324,7 +327,7 @@ const resendOtp = async (req, res) => {
     user.verificationOtpExpire = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'TurfPro - Resend Verification OTP',
       html: `
@@ -343,8 +346,11 @@ const resendOtp = async (req, res) => {
 
     res.json({
       status: true,
-      message: 'A new verification OTP has been sent to your email.',
-      data: { email: user.email }
+      message: emailResult.status ? 'A new verification OTP has been sent to your email.' : `New OTP generated (Email failed: ${emailResult.message})`,
+      data: {
+        email: user.email,
+        ...(!emailResult.status ? { devOtp: otp, emailError: emailResult.message } : {})
+      }
     });
   } catch (error) {
     console.error(`Resend OTP error: ${error.message}`);
