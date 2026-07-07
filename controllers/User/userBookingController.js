@@ -3,6 +3,7 @@ const Turf = require('../../models/Super_admin/Turf');
 const Slot = require('../../models/Turf_admin/Slot');
 const Notification = require('../../models/User/Notification');
 const { sendEmail } = require('../../utils/emailService');
+const { generateUpiQrCode } = require('../../utils/upiService');
 
 // Helper to check if a match start time is at least X hours in the future
 const isAtLeastXHoursAway = (dateStr, startTimeStr, hours = 2) => {
@@ -134,10 +135,17 @@ const createBooking = async (req, res) => {
       text: `${title}\nTurf: ${turf.name}\nDate: ${date}\nTime: ${startTime} - ${endTime}\nAmount: ₹${calculatedPrice}`
     });
 
+    const upiDetails = await generateUpiQrCode({
+      amount: calculatedPrice,
+      note: `Turf Booking #${booking._id}`,
+      transactionRef: booking._id.toString()
+    });
+
     res.status(201).json({
       status: true,
       message: 'Slot booked successfully',
-      data: booking
+      data: booking,
+      upiDetails
     });
   } catch (error) {
     console.error(`Create booking error: ${error.message}`);
@@ -193,10 +201,17 @@ const getBookingDetails = async (req, res) => {
       return res.status(404).json({ status: false, message: 'Booking not found', data: null });
     }
 
+    const upiDetails = await generateUpiQrCode({
+      amount: booking.totalPrice,
+      note: `Turf Booking #${booking._id}`,
+      transactionRef: booking._id.toString()
+    });
+
     res.json({
       status: true,
       message: 'Booking details retrieved successfully',
-      data: booking
+      data: booking,
+      upiDetails
     });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message, data: null });
@@ -292,9 +307,47 @@ const cancelBooking = async (req, res) => {
   }
 };
 
+// @desc    Generate UPI QR code for arbitrary amount or booking
+// @route   POST /api/user/bookings/generate-upi-qr
+// @access  Private (User)
+const generateBookingUpiQr = async (req, res) => {
+  try {
+    const { amount, note, bookingId } = req.body;
+
+    let targetAmount = amount;
+    let targetNote = note || 'TurfPro Payment';
+    let targetRef = bookingId;
+
+    if (bookingId) {
+      const booking = await Booking.findOne({ _id: bookingId, userId: req.user._id });
+      if (booking) {
+        targetAmount = booking.totalPrice;
+        targetNote = `Turf Booking #${booking._id}`;
+        targetRef = booking._id.toString();
+      }
+    }
+
+    const upiDetails = await generateUpiQrCode({
+      amount: targetAmount,
+      note: targetNote,
+      transactionRef: targetRef
+    });
+
+    res.json({
+      status: true,
+      message: 'UPI QR Code generated successfully',
+      data: upiDetails
+    });
+  } catch (error) {
+    console.error(`Generate UPI QR error: ${error.message}`);
+    res.status(500).json({ status: false, message: error.message, data: null });
+  }
+};
+
 module.exports = {
   createBooking,
   getMyBookings,
   getBookingDetails,
-  cancelBooking
+  cancelBooking,
+  generateBookingUpiQr
 };

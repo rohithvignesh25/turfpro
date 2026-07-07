@@ -5,7 +5,8 @@ const {
   createBooking,
   getMyBookings,
   getBookingDetails,
-  cancelBooking
+  cancelBooking,
+  generateBookingUpiQr
 } = require('../../controllers/User/userBookingController');
 
 router.use(protect, protectUser);
@@ -14,6 +15,7 @@ router.route('/')
   .post(createBooking)
   .get(getMyBookings);
 
+router.post('/generate-upi-qr', generateBookingUpiQr);
 router.get('/:id', getBookingDetails);
 router.post('/:id/cancel', cancelBooking);
 
